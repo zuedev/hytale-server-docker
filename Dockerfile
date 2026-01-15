@@ -19,14 +19,12 @@ RUN unzip hytale-downloader.zip hytale-downloader-linux-amd64
 # remove zip file
 RUN rm hytale-downloader.zip
 
-# run the hytale downloader cli
-RUN ./hytale-downloader-linux-amd64 \
-    --session-token $HYTALE_SERVER_SESSION_TOKEN \
-    --identity-token $HYTALE_SERVER_IDENTITY_TOKEN \
-    --owner-uuid $HYTALE_SERVER_OWNER_UUID
+# copy entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # expose default hytale server port
 EXPOSE 5520
 
-# run the hytale server
-CMD ["java", "-jar", "HytaleServer.jar"]
+# run the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]

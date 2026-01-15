@@ -22,11 +22,7 @@ Before building or running this container, you'll need:
 ### 1. Build the Image
 
 ```bash
-docker build \
-  --build-arg HYTALE_SERVER_SESSION_TOKEN=<your-session-token> \
-  --build-arg HYTALE_SERVER_IDENTITY_TOKEN=<your-identity-token> \
-  --build-arg HYTALE_SERVER_OWNER_UUID=<your-owner-uuid> \
-  -t hytale-server .
+docker build -t hytale-server .
 ```
 
 ### 2. Run the Container
@@ -34,9 +30,14 @@ docker build \
 ```bash
 docker run -d \
   -p 5520:5520/udp \
+  -e HYTALE_SERVER_SESSION_TOKEN=<your-session-token> \
+  -e HYTALE_SERVER_IDENTITY_TOKEN=<your-identity-token> \
+  -e HYTALE_SERVER_OWNER_UUID=<your-owner-uuid> \
   --name hytale-server \
   hytale-server
 ```
+
+The server files will be automatically downloaded on first start.
 
 > ⚠️ **Important:** Hytale uses the QUIC protocol over **UDP** (not TCP). Make sure to expose the port as UDP.
 
@@ -52,7 +53,9 @@ Follow the on-screen instructions to complete authentication via https://account
 
 ## Configuration
 
-### Environment Variables (Build Args)
+### Environment Variables
+
+These environment variables are required at **runtime** (not build time) to download the server files:
 
 | Variable                       | Description                | Required |
 | ------------------------------ | -------------------------- | -------- |
@@ -66,14 +69,17 @@ Follow the on-screen instructions to complete authentication via https://account
 | ---- | -------- | -------------------------- |
 | 5520 | UDP      | Default Hytale server port |
 
-To use a custom port, modify the container's startup command:
+To use a custom port, pass additional arguments to the entrypoint:
 
 ```bash
 docker run -d \
   -p 25565:25565/udp \
+  -e HYTALE_SERVER_SESSION_TOKEN=<your-session-token> \
+  -e HYTALE_SERVER_IDENTITY_TOKEN=<your-identity-token> \
+  -e HYTALE_SERVER_OWNER_UUID=<your-owner-uuid> \
   --name hytale-server \
   hytale-server \
-  java -jar HytaleServer.jar --assets Assets.zip --bind 0.0.0.0:25565
+  --bind 0.0.0.0:25565
 ```
 
 ### Volumes
@@ -83,6 +89,9 @@ For data persistence, mount the following directories:
 ```bash
 docker run -d \
   -p 5520:5520/udp \
+  -e HYTALE_SERVER_SESSION_TOKEN=<your-session-token> \
+  -e HYTALE_SERVER_IDENTITY_TOKEN=<your-identity-token> \
+  -e HYTALE_SERVER_OWNER_UUID=<your-owner-uuid> \
   -v ./universe:/app/universe \
   -v ./mods:/app/mods \
   -v ./logs:/app/logs \
@@ -117,14 +126,18 @@ Hytale servers require authentication to enable communication with Hytale servic
 
 ### JVM Arguments
 
-For better performance, you can customize JVM arguments:
+To customize JVM arguments, you can override the entrypoint or set `JAVA_OPTS`:
 
 ```bash
 docker run -d \
   -p 5520:5520/udp \
+  -e HYTALE_SERVER_SESSION_TOKEN=<your-session-token> \
+  -e HYTALE_SERVER_IDENTITY_TOKEN=<your-identity-token> \
+  -e HYTALE_SERVER_OWNER_UUID=<your-owner-uuid> \
   --name hytale-server \
+  --entrypoint /bin/sh \
   hytale-server \
-  java -Xms4G -Xmx8G -XX:AOTCache=HytaleServer.aot -jar HytaleServer.jar --assets Assets.zip
+  -c "java -Xms4G -Xmx8G -XX:AOTCache=HytaleServer.aot -jar HytaleServer.jar --assets Assets.zip"
 ```
 
 | Argument                        | Description                            |
