@@ -1,3 +1,6 @@
+> [!WARNING]
+> This project is still in early development. Use at your own risk, and please report any issues you encounter.
+
 # Hytale Server Docker
 
 A Docker image for running dedicated [Hytale](https://hytale.com/) game servers.
