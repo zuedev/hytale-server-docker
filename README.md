@@ -205,6 +205,44 @@ View all available arguments:
 java -jar HytaleServer.jar --help
 ```
 
+## Development
+
+### Building Locally
+
+```bash
+docker build -t hytale-server .
+```
+
+### CI/CD
+
+This project uses GitHub Actions to automatically build and publish the Docker image to GitHub Container Registry (ghcr.io).
+
+**Triggers:**
+
+- Push to `main` branch
+- Version tags (`v*`)
+- Pull requests (build only, no push)
+
+**Image Tags:**
+
+| Trigger        | Example Tags                       |
+| -------------- | ---------------------------------- |
+| Push to `main` | `main`, `sha-abc1234`              |
+| Tag `v1.2.3`   | `1.2.3`, `1.2`, `1`, `sha-abc1234` |
+
+**Publishing a Release:**
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The image will be available at:
+
+```
+ghcr.io/<username>/hytale-server-docker:latest
+```
+
 ## Resources
 
 - [Official Hytale Server Manual](https://support.hytale.com/hc/en-us/articles/45326769420827-Hytale-Server-Manual)
