@@ -33,6 +33,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Convert README.md to index.html
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+          pandoc README.md -s -o index.html --metadata title="Hytale Server Docker"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
