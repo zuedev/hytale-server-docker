@@ -165,6 +165,360 @@ View distance is the main driver for RAM usage. Limit maximum view distance to 1
 # Configure in config.json or via server arguments
 ```
 
+## Deployment Examples
+
+### Kubernetes
+
+Deploy a Hytale server on Kubernetes with persistent storage:
+
+```yaml
+# hytale-server-deployment.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hytale-server-secrets
+type: Opaque
+stringData:
+  session-token: "<your-session-token>"
+  identity-token: "<your-identity-token>"
+  owner-uuid: "<your-owner-uuid>"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hytale-server-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hytale-server
+  labels:
+    app: hytale-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hytale-server
+  template:
+    metadata:
+      labels:
+        app: hytale-server
+    spec:
+      containers:
+        - name: hytale-server
+          image: ghcr.io/<username>/hytale-server-docker:latest
+          ports:
+            - containerPort: 5520
+              protocol: UDP
+          env:
+            - name: HYTALE_SERVER_SESSION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hytale-server-secrets
+                  key: session-token
+            - name: HYTALE_SERVER_IDENTITY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hytale-server-secrets
+                  key: identity-token
+            - name: HYTALE_SERVER_OWNER_UUID
+              valueFrom:
+                secretKeyRef:
+                  name: hytale-server-secrets
+                  key: owner-uuid
+          volumeMounts:
+            - name: server-data
+              mountPath: /app/universe
+              subPath: universe
+            - name: server-data
+              mountPath: /app/mods
+              subPath: mods
+            - name: server-data
+              mountPath: /app/logs
+              subPath: logs
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1"
+            limits:
+              memory: "8Gi"
+              cpu: "4"
+      volumes:
+        - name: server-data
+          persistentVolumeClaim:
+            claimName: hytale-server-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hytale-server
+spec:
+  type: LoadBalancer
+  selector:
+    app: hytale-server
+  ports:
+    - port: 5520
+      targetPort: 5520
+      protocol: UDP
+```
+
+Apply with:
+
+```bash
+kubectl apply -f hytale-server-deployment.yaml
+```
+
+### Terraform (AWS ECS)
+
+Deploy to AWS ECS using Terraform:
+
+```hcl
+# main.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+variable "aws_region" {
+  default = "us-east-1"
+}
+
+variable "hytale_session_token" {
+  sensitive = true
+}
+
+variable "hytale_identity_token" {
+  sensitive = true
+}
+
+variable "hytale_owner_uuid" {
+  sensitive = true
+}
+
+resource "aws_ecs_cluster" "hytale" {
+  name = "hytale-server-cluster"
+}
+
+resource "aws_ecs_task_definition" "hytale_server" {
+  family                   = "hytale-server"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "2048"
+  memory                   = "4096"
+
+  container_definitions = jsonencode([
+    {
+      name      = "hytale-server"
+      image     = "ghcr.io/<username>/hytale-server-docker:latest"
+      essential = true
+
+      portMappings = [
+        {
+          containerPort = 5520
+          hostPort      = 5520
+          protocol      = "udp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "HYTALE_SERVER_SESSION_TOKEN"
+          value = var.hytale_session_token
+        },
+        {
+          name  = "HYTALE_SERVER_IDENTITY_TOKEN"
+          value = var.hytale_identity_token
+        },
+        {
+          name  = "HYTALE_SERVER_OWNER_UUID"
+          value = var.hytale_owner_uuid
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/hytale-server"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+resource "aws_cloudwatch_log_group" "hytale" {
+  name              = "/ecs/hytale-server"
+  retention_in_days = 7
+}
+
+resource "aws_ecs_service" "hytale_server" {
+  name            = "hytale-server"
+  cluster         = aws_ecs_cluster.hytale.id
+  task_definition = aws_ecs_task_definition.hytale_server.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.subnet_ids
+    security_groups  = [aws_security_group.hytale.id]
+    assign_public_ip = true
+  }
+}
+
+resource "aws_security_group" "hytale" {
+  name        = "hytale-server-sg"
+  description = "Security group for Hytale server"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port   = 5520
+    to_port     = 5520
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+variable "vpc_id" {
+  description = "VPC ID for the ECS service"
+}
+
+variable "subnet_ids" {
+  description = "Subnet IDs for the ECS service"
+  type        = list(string)
+}
+
+output "cluster_name" {
+  value = aws_ecs_cluster.hytale.name
+}
+```
+
+Deploy with:
+
+```bash
+terraform init
+terraform apply \
+  -var="hytale_session_token=<your-token>" \
+  -var="hytale_identity_token=<your-token>" \
+  -var="hytale_owner_uuid=<your-uuid>" \
+  -var="vpc_id=vpc-xxxxx" \
+  -var="subnet_ids=[\"subnet-xxxxx\"]"
+```
+
+### Ansible
+
+Deploy to a remote server using Ansible:
+
+```yaml
+# playbook.yml
+---
+- name: Deploy Hytale Server
+  hosts: game_servers
+  become: yes
+  vars:
+    hytale_server_port: 5520
+    hytale_data_path: /opt/hytale
+    hytale_image: "ghcr.io/<username>/hytale-server-docker:latest"
+  vars_prompt:
+    - name: hytale_session_token
+      prompt: "Enter Hytale session token"
+      private: yes
+    - name: hytale_identity_token
+      prompt: "Enter Hytale identity token"
+      private: yes
+    - name: hytale_owner_uuid
+      prompt: "Enter Hytale owner UUID"
+      private: no
+
+  tasks:
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - docker.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create Hytale data directories
+      file:
+        path: "{{ hytale_data_path }}/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - universe
+        - mods
+        - logs
+
+    - name: Pull Hytale server image
+      community.docker.docker_image:
+        name: "{{ hytale_image }}"
+        source: pull
+
+    - name: Deploy Hytale server container
+      community.docker.docker_container:
+        name: hytale-server
+        image: "{{ hytale_image }}"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ hytale_server_port }}:5520/udp"
+        env:
+          HYTALE_SERVER_SESSION_TOKEN: "{{ hytale_session_token }}"
+          HYTALE_SERVER_IDENTITY_TOKEN: "{{ hytale_identity_token }}"
+          HYTALE_SERVER_OWNER_UUID: "{{ hytale_owner_uuid }}"
+        volumes:
+          - "{{ hytale_data_path }}/universe:/app/universe"
+          - "{{ hytale_data_path }}/mods:/app/mods"
+          - "{{ hytale_data_path }}/logs:/app/logs"
+
+    - name: Configure firewall for Hytale
+      ufw:
+        rule: allow
+        port: "{{ hytale_server_port }}"
+        proto: udp
+```
+
+Create an inventory file:
+
+```ini
+# inventory.ini
+[game_servers]
+hytale-server-1 ansible_host=192.168.1.100 ansible_user=ubuntu
+```
+
+Run the playbook:
+
+```bash
+ansible-playbook -i inventory.ini playbook.yml
+```
+
 ## System Requirements
 
 | Resource         | Recommendation                                              |
