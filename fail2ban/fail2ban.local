@@ -1,0 +1,20 @@
+# Fail2Ban local configuration
+# Override default settings here
+
+[Definition]
+# Log level: CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG
+loglevel = INFO
+
+# Log target: STDOUT, STDERR, SYSLOG, or file path
+logtarget = STDOUT
+
+# Socket path
+socket = /var/run/fail2ban/fail2ban.sock
+
+# PID file path
+pidfile = /var/run/fail2ban/fail2ban.pid
+
+# Database settings
+# Set to None to disable database (reduces disk I/O in containers)
+dbfile = /var/lib/fail2ban/fail2ban.sqlite3
+dbpurgeage = 1d

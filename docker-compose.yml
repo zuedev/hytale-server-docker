@@ -81,6 +81,38 @@ services:
   #   stdin_open: true
   #   tty: true
 
+  # ============================================================
+  # FAIL2BAN INTEGRATION
+  # Protects the server from brute-force attacks and malicious
+  # connection attempts by monitoring logs and banning IPs.
+  # Uncomment to enable fail2ban protection.
+  # ============================================================
+
+  # fail2ban:
+  #   image: crazymax/fail2ban:latest
+  #   container_name: hytale-fail2ban
+  #   network_mode: host
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - NET_RAW
+  #   environment:
+  #     - TZ=${TZ:-UTC}
+  #     - F2B_LOG_TARGET=STDOUT
+  #     - F2B_LOG_LEVEL=INFO
+  #     - F2B_DB_PURGE_AGE=1d
+  #   volumes:
+  #     # Fail2ban configuration
+  #     - ./fail2ban/jail.d:/etc/fail2ban/jail.d:ro
+  #     - ./fail2ban/filter.d:/etc/fail2ban/filter.d:ro
+  #     - ./fail2ban/fail2ban.local:/etc/fail2ban/fail2ban.local:ro
+  #     # Fail2ban data persistence
+  #     - fail2ban-data:/var/lib/fail2ban
+  #     # Access to Hytale server logs (mount the same logs volume)
+  #     - hytale-logs:/var/log/hytale:ro
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - hytale-server
+
 volumes:
   hytale-data:
     name: hytale-server-data
@@ -90,6 +122,14 @@ volumes:
     #   type: none
     #   o: bind
     #   device: /path/to/your/data
+
+  # Fail2ban data volume for ban database persistence
+  # fail2ban-data:
+  #   name: hytale-fail2ban-data
+
+  # Shared logs volume for fail2ban monitoring
+  # hytale-logs:
+  #   name: hytale-server-logs
 
   # Additional volumes for multiple instances
   # hytale-data-2:

@@ -11,6 +11,7 @@ A Docker image for running dedicated [Hytale](https://hytale.com/) game servers.
 - ☕ Pre-installed Java 25 (OpenJDK JRE)
 - 📦 Automatic server file download via Hytale Downloader CLI
 - 🔒 OAuth2 authentication support
+- 🛡️ Optional fail2ban integration for brute-force protection
 
 ## Prerequisites
 
@@ -164,6 +165,93 @@ View distance is the main driver for RAM usage. Limit maximum view distance to 1
 ```bash
 # Configure in config.json or via server arguments
 ```
+
+### Fail2ban Integration
+
+Protect your server from brute-force attacks and malicious connection attempts using fail2ban. The included configuration monitors server logs and automatically bans suspicious IPs.
+
+#### Enable Fail2ban
+
+1. **Mount logs volume** - Add a logs volume to your Hytale server service:
+
+```yaml
+services:
+  hytale-server:
+    # ... existing configuration ...
+    volumes:
+      - hytale-data:/app
+      - hytale-logs:/app/logs # Add this line
+```
+
+2. **Uncomment the fail2ban service** in `docker-compose.yml`:
+
+```yaml
+fail2ban:
+  image: crazymax/fail2ban:latest
+  container_name: hytale-fail2ban
+  network_mode: host
+  cap_add:
+    - NET_ADMIN
+    - NET_RAW
+  environment:
+    - TZ=${TZ:-UTC}
+    - F2B_LOG_TARGET=STDOUT
+    - F2B_LOG_LEVEL=INFO
+    - F2B_DB_PURGE_AGE=1d
+  volumes:
+    - ./fail2ban/jail.d:/etc/fail2ban/jail.d:ro
+    - ./fail2ban/filter.d:/etc/fail2ban/filter.d:ro
+    - ./fail2ban/fail2ban.local:/etc/fail2ban/fail2ban.local:ro
+    - fail2ban-data:/var/lib/fail2ban
+    - hytale-logs:/var/log/hytale:ro
+  restart: unless-stopped
+  depends_on:
+    - hytale-server
+```
+
+3. **Uncomment the required volumes**:
+
+```yaml
+volumes:
+  fail2ban-data:
+    name: hytale-fail2ban-data
+  hytale-logs:
+    name: hytale-server-logs
+```
+
+#### Configuration Files
+
+| File                            | Description                            |
+| ------------------------------- | -------------------------------------- |
+| `fail2ban/filter.d/hytale.conf` | Log patterns to match failed attempts  |
+| `fail2ban/jail.d/hytale.conf`   | Ban settings (maxretry, bantime, etc.) |
+| `fail2ban/fail2ban.local`       | General fail2ban settings              |
+
+#### Customize Ban Settings
+
+Edit `fail2ban/jail.d/hytale.conf` to adjust:
+
+```ini
+[hytale]
+maxretry = 5      # Failed attempts before ban
+findtime = 600    # Time window (seconds)
+bantime = 3600    # Ban duration (seconds, -1 for permanent)
+```
+
+#### Monitor Banned IPs
+
+```bash
+# View fail2ban status
+docker exec hytale-fail2ban fail2ban-client status hytale
+
+# Unban an IP
+docker exec hytale-fail2ban fail2ban-client set hytale unbanip <IP>
+
+# View fail2ban logs
+docker logs hytale-fail2ban
+```
+
+> ⚠️ **Note:** The filter patterns in `fail2ban/filter.d/hytale.conf` may need adjustment based on actual Hytale server log format. Monitor your logs and update the regex patterns accordingly.
 
 ## Deployment Examples
 
