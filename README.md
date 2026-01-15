@@ -600,6 +600,134 @@ The image will be available at:
 ghcr.io/<username>/hytale-server-docker:latest
 ```
 
+## Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### Server Fails to Start
+
+| Symptom                                  | Possible Cause                             | Solution                                                                                                               |
+| ---------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `Error: Invalid session token`           | Expired or invalid authentication tokens   | Re-authenticate using `/auth login device`                                                                             |
+| `Error: Unable to download server files` | Missing or incorrect environment variables | Verify `HYTALE_SERVER_SESSION_TOKEN`, `HYTALE_SERVER_IDENTITY_TOKEN`, and `HYTALE_SERVER_OWNER_UUID` are set correctly |
+| `OutOfMemoryError`                       | Insufficient heap memory                   | Increase JVM heap size with `-Xmx` (e.g., `-Xmx4G`)                                                                    |
+| Container exits immediately              | Missing required files or permissions      | Check container logs with `docker logs hytale-server`                                                                  |
+
+#### Players Cannot Connect
+
+| Symptom               | Possible Cause            | Solution                                                        |
+| --------------------- | ------------------------- | --------------------------------------------------------------- |
+| Connection timeout    | Wrong port protocol       | Ensure port is exposed as **UDP**, not TCP (`-p 5520:5520/udp`) |
+| Connection refused    | Firewall blocking traffic | Allow UDP port 5520 through your firewall                       |
+| Authentication failed | Server not authenticated  | Run `/auth login device` and complete the device flow           |
+
+#### Performance Issues
+
+| Symptom        | Possible Cause         | Solution                                              |
+| -------------- | ---------------------- | ----------------------------------------------------- |
+| High RAM usage | Large view distance    | Reduce view distance to 12 chunks or less             |
+| Slow startup   | No AOT cache           | Enable AOT cache with `-XX:AOTCache=HytaleServer.aot` |
+| Lag spikes     | Insufficient resources | Allocate more CPU/RAM to the container                |
+
+### Debug Mode Instructions
+
+Enable verbose logging to diagnose issues:
+
+```bash
+docker run -d \
+  -p 5520:5520/udp \
+  -e HYTALE_SERVER_SESSION_TOKEN=<your-session-token> \
+  -e HYTALE_SERVER_IDENTITY_TOKEN=<your-identity-token> \
+  -e HYTALE_SERVER_OWNER_UUID=<your-owner-uuid> \
+  -v ./logs:/app/logs \
+  --name hytale-server \
+  hytale-server \
+  --log-level debug
+```
+
+#### Viewing Logs
+
+```bash
+# View live logs
+docker logs -f hytale-server
+
+# View last 100 lines
+docker logs --tail 100 hytale-server
+
+# Check log files directly
+docker exec hytale-server cat /app/logs/latest.log
+```
+
+#### Inspecting Container State
+
+```bash
+# Check container status
+docker inspect hytale-server --format='{{.State.Status}}'
+
+# View environment variables
+docker inspect hytale-server --format='{{.Config.Env}}'
+
+# Access container shell
+docker exec -it hytale-server /bin/sh
+```
+
+### Network Connectivity Testing
+
+#### Test UDP Port Accessibility
+
+From inside the container:
+
+```bash
+docker exec hytale-server nc -zvu localhost 5520
+```
+
+From the host machine (requires netcat):
+
+```bash
+nc -zvu <server-ip> 5520
+```
+
+#### Verify Port Binding
+
+```bash
+# Check exposed ports
+docker port hytale-server
+
+# Verify UDP listener
+docker exec hytale-server netstat -uln | grep 5520
+```
+
+#### Firewall Diagnostics
+
+**Linux (iptables):**
+
+```bash
+sudo iptables -L -n | grep 5520
+```
+
+**Linux (ufw):**
+
+```bash
+sudo ufw status | grep 5520
+```
+
+**Windows:**
+
+```powershell
+netsh advfirewall firewall show rule name=all | findstr 5520
+```
+
+#### Test External Connectivity
+
+Use an online port checker or ask a friend to test:
+
+1. Ensure your server is running
+2. Visit a UDP port checker website
+3. Enter your public IP and port 5520
+4. Verify the port shows as "open"
+
+> 💡 **Tip:** If behind NAT, ensure port forwarding is configured on your router for UDP port 5520.
+
 ## Resources
 
 - [Official Hytale Server Manual](https://support.hytale.com/hc/en-us/articles/45326769420827-Hytale-Server-Manual)
