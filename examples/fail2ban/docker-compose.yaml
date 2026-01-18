@@ -1,0 +1,29 @@
+services:
+  hytale:
+    image: ghcr.io/zuedev/hytale-server-docker:main
+    ports:
+      - "5520:5520/udp"
+    volumes:
+      - ./hytale-data:/app/Hytale
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  fail2ban:
+    image: crazymax/fail2ban:latest
+    container_name: fail2ban
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./hytale-data/logs:/var/log/hytale:ro
+      - ./fail2ban/jail.d:/data/jail.d:ro
+      - ./fail2ban/filter.d:/data/filter.d:ro
+      - ./fail2ban-data:/data/db
+    environment:
+      - TZ=UTC
+      - F2B_LOG_TARGET=STDOUT
+      - F2B_LOG_LEVEL=INFO
+      - F2B_DB_PURGE_AGE=1d

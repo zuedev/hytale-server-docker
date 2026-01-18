@@ -1,0 +1,31 @@
+# Fail2Ban filter for Hytale server
+#
+# NOTE: This is a template filter. You'll need to adjust the regex patterns
+# based on actual Hytale server log output for authentication failures,
+# invalid packets, or other malicious activity.
+#
+# Common patterns to look for:
+# - Failed authentication attempts
+# - Invalid packet/protocol errors
+# - Connection floods from single IP
+# - Malformed requests
+
+[Definition]
+
+# Example patterns - adjust based on actual Hytale server log format
+# These are placeholder patterns that need to be customized
+
+# Failed authentication pattern (adjust regex to match actual logs)
+failregex = ^.*\[WARN\].*Failed authentication from <HOST>.*$
+            ^.*\[ERROR\].*Invalid packet from <HOST>.*$
+            ^.*\[WARN\].*Connection refused from <HOST>.*$
+            ^.*\[WARN\].*Kicked <HOST>.*$
+            ^.*Connection from <HOST>.*failed.*$
+
+# Ignore legitimate connections
+ignoreregex = 
+
+# Notes:
+# - <HOST> is a special fail2ban tag that matches IP addresses
+# - Adjust patterns after examining actual Hytale server logs
+# - Check /app/Hytale/logs/ for log file format
