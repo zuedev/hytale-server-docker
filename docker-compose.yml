@@ -1,98 +1,10 @@
 services:
-  hytale-server:
+  hytale:
     build: .
-    image: hytale-server:latest
-    container_name: hytale-server
     ports:
-      # Default Hytale server port
-      - "5520:5520"
-    environment:
-      # Required: Authentication tokens from Hytale server dashboard
-      - HYTALE_SERVER_SESSION_TOKEN=${HYTALE_SERVER_SESSION_TOKEN}
-      - HYTALE_SERVER_IDENTITY_TOKEN=${HYTALE_SERVER_IDENTITY_TOKEN}
-      - HYTALE_SERVER_OWNER_UUID=${HYTALE_SERVER_OWNER_UUID}
-    env_file:
-      # Load environment variables from .env file
-      - .env
+      - "5520:5520/udp"
     volumes:
-      # Server data (downloaded files, server jar, assets)
-      - hytale-data:/app
-      # Optional: Mount local config directory for easier access
-      # - ./config:/app/config
-      # Optional: Mount local worlds directory for backup/restore
-      # - ./worlds:/app/worlds
-      # Optional: Mount local logs directory
-      # - ./logs:/app/logs
+      - ./Hytale:/app/Hytale
     restart: unless-stopped
     stdin_open: true
     tty: true
-    # Optional: Resource limits
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 4G
-    #     reservations:
-    #       memory: 1G
-
-  # ============================================================
-  # MULTIPLE SERVER INSTANCES EXAMPLE
-  # Uncomment and configure the services below to run multiple
-  # Hytale server instances on the same host.
-  # Each instance requires its own:
-  #   - Unique container name
-  #   - Unique external port mapping
-  #   - Separate data volume
-  #   - Own set of authentication tokens
-  # ============================================================
-
-  # hytale-server-2:
-  #   build: .
-  #   image: hytale-server:latest
-  #   container_name: hytale-server-2
-  #   ports:
-  #     - "5521:5520"
-  #   environment:
-  #     - HYTALE_SERVER_SESSION_TOKEN=${HYTALE_SERVER_2_SESSION_TOKEN}
-  #     - HYTALE_SERVER_IDENTITY_TOKEN=${HYTALE_SERVER_2_IDENTITY_TOKEN}
-  #     - HYTALE_SERVER_OWNER_UUID=${HYTALE_SERVER_2_OWNER_UUID}
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - hytale-data-2:/app
-  #   restart: unless-stopped
-  #   stdin_open: true
-  #   tty: true
-
-  # hytale-server-3:
-  #   build: .
-  #   image: hytale-server:latest
-  #   container_name: hytale-server-3
-  #   ports:
-  #     - "5522:5520"
-  #   environment:
-  #     - HYTALE_SERVER_SESSION_TOKEN=${HYTALE_SERVER_3_SESSION_TOKEN}
-  #     - HYTALE_SERVER_IDENTITY_TOKEN=${HYTALE_SERVER_3_IDENTITY_TOKEN}
-  #     - HYTALE_SERVER_OWNER_UUID=${HYTALE_SERVER_3_OWNER_UUID}
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - hytale-data-3:/app
-  #   restart: unless-stopped
-  #   stdin_open: true
-  #   tty: true
-
-volumes:
-  hytale-data:
-    name: hytale-server-data
-    # Optional: Use local driver with specific path
-    # driver: local
-    # driver_opts:
-    #   type: none
-    #   o: bind
-    #   device: /path/to/your/data
-
-  # Additional volumes for multiple instances
-  # hytale-data-2:
-  #   name: hytale-server-2-data
-  # hytale-data-3:
-  #   name: hytale-server-3-data

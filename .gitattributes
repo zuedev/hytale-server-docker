@@ -1,3 +1,2 @@
-# Ensure shell scripts always have LF line endings
-*.sh text eol=lf
-entrypoint.sh text eol=lf
+# LF line endings
+* text=auto eol=lf

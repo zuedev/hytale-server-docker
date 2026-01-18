@@ -1,30 +1,26 @@
-# start with a lightweight Alpine Linux image
+# Base image
 FROM alpine:3.23
 
-# where we working?
+# Set working directory
 WORKDIR /app
 
-# get apk package manager up to date
-RUN apk update
+# Install dependencies and download Hytale server in a single layer
+RUN apk add --no-cache \
+        openjdk25-jre \
+        gcompat \
+        libc6-compat \
+        libgcc \
+        libstdc++ \
+    && wget -q https://downloader.hytale.com/hytale-downloader.zip \
+    && unzip hytale-downloader.zip hytale-downloader-linux-amd64 \
+    && rm hytale-downloader.zip
 
-# install java 25 runtime environment
-RUN apk add --no-cache openjdk25-jre
-
-# downlaod hytale downloader cli
-RUN wget https://downloader.hytale.com/hytale-downloader.zip
-
-# extract hytale-downloader-linux-amd64 cli from zip
-RUN unzip hytale-downloader.zip hytale-downloader-linux-amd64
-
-# remove zip file
-RUN rm hytale-downloader.zip
-
-# copy entrypoint script
+# Copy and prepare entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# expose default hytale server port
+# Expose default Hytale server port
 EXPOSE 5520
 
-# run the entrypoint script
+# Set entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
