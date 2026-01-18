@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hytale-server
+  namespace: hytale
+  labels:
+    app: hytale-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hytale-server
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hytale-server
+    spec:
+      containers:
+        - name: hytale
+          image: ghcr.io/zuedev/hytale-server-docker:main
+          ports:
+            - containerPort: 5520
+              protocol: UDP
+              name: game
+          volumeMounts:
+            - name: hytale-data
+              mountPath: /app/Hytale
+          stdin: true
+          tty: true
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
+      volumes:
+        - name: hytale-data
+          persistentVolumeClaim:
+            claimName: hytale-data
