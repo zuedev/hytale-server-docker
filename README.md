@@ -24,13 +24,19 @@ services:
 Then, run the following command to start the server:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-Once the container is running, you will need to attach to it to complete the OAuth2 setup:
+Then you will need to check the container logs to see the progress of the server setup, as well as authentication instructions:
 
 ```bash
-docker attach hytale
+docker compose logs -f hytale
+```
+
+Once the Hytale server itself is downloaded and running, you will need to attach to it to complete the OAuth2 setup:
+
+```bash
+docker compose attach hytale
 ```
 
 Type `auth login device` in the container terminal and follow the instructions to authenticate your server. Once authenticated, you can detach from the container by pressing `Ctrl + P` followed by `Ctrl + Q`.
