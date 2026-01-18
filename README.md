@@ -45,6 +45,36 @@ Type `auth login device` in the container terminal and follow the instructions t
 
 I recommend running `auth persistence Encrypted` within the container to ensure that your authentication tokens are saved securely and persist across container restarts. Make sure to reauthenticate after running this command to store the tokens.
 
+## Configuration
+
+The following environment variables can be used to configure the Hytale server:
+
+| Variable                       | Default              | Description                                 |
+| ------------------------------ | -------------------- | ------------------------------------------- |
+| `HYTALE_MINIMUM_MEMORY`        | `128M`               | Minimum memory allocation for the JVM       |
+| `HYTALE_MAXIMUM_MEMORY`        | 90% of system memory | Maximum memory allocation for the JVM       |
+| `HYTALE_SERVER_PORT`           | `5520`               | Port the server binds to                    |
+| `HYTALE_PARAMETERS`            | _(see below)_        | Override all JVM/server parameters          |
+| `HYTALE_ADDITIONAL_PARAMETERS` | _(none)_             | Append additional parameters to the default |
+
+### Example with Custom Memory Settings
+
+```yaml
+services:
+  hytale:
+    image: ghcr.io/zuedev/hytale-server-docker
+    ports:
+      - "5520:5520/udp"
+    volumes:
+      - ./data:/app/Hytale
+    environment:
+      - HYTALE_MINIMUM_MEMORY=512M
+      - HYTALE_MAXIMUM_MEMORY=4096M
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+```
+
 ## Legal
 
 This project is not affiliated with or endorsed by Hypixel Studios. Hytale and all related trademarks are the property of their respective owners. This project is intended for educational and personal use only.

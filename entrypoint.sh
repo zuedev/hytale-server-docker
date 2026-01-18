@@ -1,7 +1,20 @@
 #!/bin/sh
 
+# Extract total memory in MB
+SYSTEM_TOTAL_MEMORY=$(free -m | awk '/^Mem:/ {print $2}')
+SYSTEM_TOTAL_MEMORY=${SYSTEM_TOTAL_MEMORY:-4096}  # fallback to 4GB if free command fails
+
+# Set minimum memory to 128M if not specified
+HYTALE_MINIMUM_MEMORY=${HYTALE_MINIMUM_MEMORY:-128M}
+
+# Set maximum memory to 90% of total system memory if not specified
+HYTALE_MAXIMUM_MEMORY=${HYTALE_MAXIMUM_MEMORY:-$(($SYSTEM_TOTAL_MEMORY * 90 / 100))M}
+
+# Set default server port if not specified
+HYTALE_SERVER_PORT=${HYTALE_SERVER_PORT:-5520}
+
 # set default parameters for Hytale server
-HYTALE_PARAMETERS=${HYTALE_PARAMETERS:-"-jar /app/Hytale/Server/HytaleServer.jar --assets /app/Hytale/Assets.zip"}
+HYTALE_PARAMETERS=${HYTALE_PARAMETERS:-"-XX:AOTCache=/app/Hytale/Server/HytaleServer.aot -Xms${HYTALE_MINIMUM_MEMORY} -Xmx${HYTALE_MAXIMUM_MEMORY} -jar /app/Hytale/Server/HytaleServer.jar --assets /app/Hytale/Assets.zip --bind 0.0.0.0:${HYTALE_SERVER_PORT}"}
 
 # do we have any additional parameters to append?
 if [ ! -z "$HYTALE_ADDITIONAL_PARAMETERS" ]; then
