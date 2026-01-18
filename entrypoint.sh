@@ -1,5 +1,13 @@
 #!/bin/sh
 
+# set default parameters for Hytale server
+HYTALE_PARAMETERS=${HYTALE_PARAMETERS:-"-jar /app/Hytale/Server/HytaleServer.jar --assets /app/Hytale/Assets.zip"}
+
+# do we have any additional parameters to append?
+if [ ! -z "$HYTALE_ADDITIONAL_PARAMETERS" ]; then
+    HYTALE_PARAMETERS="$HYTALE_PARAMETERS $HYTALE_ADDITIONAL_PARAMETERS"
+fi
+
 # Download Hytale server files if not already present
 if [ ! -f "/app/Hytale/Server/HytaleServer.jar" ]; then
     echo "Hytale server files not found. Downloading..."
@@ -18,4 +26,4 @@ else
 fi
 
 # Start the Hytale server
-exec java -jar /app/Hytale/Server/HytaleServer.jar --assets /app/Hytale/Assets.zip
+exec java $HYTALE_PARAMETERS
