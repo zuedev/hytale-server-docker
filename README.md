@@ -15,7 +15,7 @@ services:
     ports:
       - "5520:5520/udp"
     volumes:
-      - ./Hytale:/app/Hytale
+      - ./data:/app/Hytale
     restart: unless-stopped
     stdin_open: true
     tty: true
