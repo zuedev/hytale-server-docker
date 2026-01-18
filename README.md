@@ -56,6 +56,7 @@ The following environment variables can be used to configure the Hytale server:
 | `HYTALE_SERVER_PORT`           | `5520`               | Port the server binds to                    |
 | `HYTALE_PARAMETERS`            | _(see below)_        | Override all JVM/server parameters          |
 | `HYTALE_ADDITIONAL_PARAMETERS` | _(none)_             | Append additional parameters to the default |
+| `HYTALE_MAX_VIEW_RADIUS`       | _(none)_             | Override `MaxViewRadius` in `config.json`   |
 
 ### Example with Custom Memory Settings
 

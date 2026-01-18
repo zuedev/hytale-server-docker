@@ -38,5 +38,9 @@ else
     echo "No Hytale server zip file found to unzip."
 fi
 
+if [ -f /app/Hytale/config.json ] && [ -n "$HYTALE_MAX_VIEW_RADIUS" ]; then
+    sed -i "s/\"MaxViewRadius\"[[:space:]]*:[[:space:]]*[0-9.]\+/\"MaxViewRadius\": $HYTALE_MAX_VIEW_RADIUS/" /app/Hytale/config.json
+fi
+
 # Start the Hytale server
 exec java $HYTALE_PARAMETERS
